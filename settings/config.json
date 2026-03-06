@@ -1,0 +1,28 @@
+{
+    "type": "town-settings",
+    "version": 1,
+
+    "default_agent": "opus-46",
+
+    "agents": {
+        "opus-46": {
+            "command": "claude",
+            "args": ["--model", "opus", "--dangerously-skip-permissions"]
+        },
+        "sonnet-46": {
+            "command": "claude",
+            "args": ["--model", "sonnet", "--dangerously-skip-permissions"]
+        }
+    },
+
+    "role_agents": {
+        "mayor":    "opus-46",
+        "deacon":   "sonnet-46",
+        "witness":  "sonnet-46",
+        "refinery": "sonnet-46",
+        "polecat":  "opus-46",
+        "crew":     "opus-46",
+        "boot":     "opus-46",
+        "dog":      "sonnet-46"
+    }
+}

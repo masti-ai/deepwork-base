@@ -1,0 +1,179 @@
+# gtconfig
+
+Production Gas Town configuration. Clone this into a new GT instance to replicate the Deepwork AI multi-agent engineering system.
+
+## What is Gas Town?
+
+Gas Town is a multi-agent software engineering system. One human founder, 200+ AI agents, shipping production code 24/7. This repo contains the configuration files, templates, and conventions that make it work.
+
+## Quick Start
+
+```bash
+# 1. Initialize a new Gas Town
+gt init my-town
+
+# 2. Copy config files into your GT
+cp -r gtconfig/mayor/ my-town/mayor/
+cp -r gtconfig/settings/ my-town/settings/
+cp -r gtconfig/deacon/ my-town/deacon/
+cp gtconfig/CLAUDE.md my-town/CLAUDE.md
+
+# 3. Edit town.json with your instance ID
+vim my-town/mayor/town.json
+# Change instance_id, owner, name
+
+# 4. Edit rigs.json with your repos
+vim my-town/mayor/rigs.json
+
+# 5. Prime the GT
+cd my-town && gt prime
+```
+
+## Repo Structure
+
+```
+gtconfig/
+├── README.md                    You are here
+├── CLAUDE.md                    Master instruction file (read by ALL agents)
+│
+├── mayor/                       Mayor (coordinator) config
+│   ├── town.json               GT instance identity
+│   ├── rigs.json.template      Rig-to-repo mapping (edit for your repos)
+│   ├── daemon.json             Daemon patrol config (heartbeat, dogs, intervals)
+│   ├── overseer.json.template  Human overseer identity
+│   └── multi-gt-worker-instructions.md
+│                                Handoff doc for worker GT instances
+│
+├── settings/                    Town-wide settings
+│   ├── config.json             Agent model config (which model for which role)
+│   └── escalation.json         Escalation routing (critical/high/medium/low)
+│
+├── deacon/                      Deacon (supervisor) config
+│   └── dogs/                   Dog patrol directories (auto-populated)
+│
+├── formulas/                    Bead formulas (mol templates for automation)
+│   └── *.formula.toml          All production formulas
+│
+├── templates/                   Reusable templates
+│   ├── repo/
+│   │   ├── AGENTS.md           Agent instructions for repos
+│   │   ├── CONTRIBUTING.md     Contribution guidelines template
+│   │   └── .github/
+│   │       └── PULL_REQUEST_TEMPLATE.md
+│   └── pr/
+│       ├── release-pr.md       dev -> main PR template
+│       └── release-notes.md    GitHub release notes template
+│
+├── memory/                      Mayor memory templates
+│   ├── MEMORY.md               Persistent memory structure
+│   └── mistakes.md             Incident log template
+│
+└── agents/                      Agent role configs
+    ├── mayor.md                 Mayor role description
+    ├── worker.md                Worker GT role description
+    └── reviewer.md              Reviewer role description
+```
+
+## Configuration Files
+
+### CLAUDE.md (the brain)
+
+The master instruction file read by every agent in the GT. Contains:
+- Release workflow (dev -> main, consolidated PRs)
+- GitHub sync rules (beads -> issues, epic-level sync)
+- Deployment URL management (service registry beads)
+- GitHub organization management
+- Project management (Kanban + Roadmap boards)
+- Releases & versioning (semver, release notes)
+- Multi-GT coordination (parent/worker roles, issue lifecycle)
+
+### town.json (identity)
+
+```json
+{
+  "instance_id": "gt-local",     // Unique ID for this GT instance
+  "github_sync": {
+    "enabled": true,
+    "accept_tasks_from": ["gt-docker"]  // Which GTs can assign work here
+  }
+}
+```
+
+### settings/config.json (model allocation)
+
+Controls which AI model powers each role:
+- **Mayor** (coordinator): Opus — needs deep reasoning
+- **Polecat** (worker): Opus — needs to write good code
+- **Deacon/Witness/Refinery** (supervisors): Sonnet — cost-effective for monitoring
+- **Dog** (patrols): Sonnet — lightweight checks
+
+### daemon.json (automation)
+
+Configures the daemon's patrol cycle:
+- **Heartbeat**: 3-minute pulse
+- **Refinery**: 5-minute code quality patrols
+- **Witness**: 5-minute state verification
+- **Doctor dog**: 5-minute health checks
+- **Wisp reaper**: 30-minute cleanup of stale wisps
+- **Backup**: 15-minute Dolt + JSONL backups
+
+## Multi-GT Setup
+
+This GT is designed to coordinate multiple GT instances:
+
+| Role | Description |
+|------|-------------|
+| **Parent (gt-local)** | Creates issues, reviews PRs, merges, manages releases |
+| **Worker (gt-docker)** | Picks up issues, writes code, creates PRs to `dev` |
+
+### Adding a new worker GT
+
+1. Set up the new GT instance
+2. Copy `mayor/multi-gt-worker-instructions.md` to the worker
+3. Worker configures its `town.json` with a unique `instance_id`
+4. Worker adds the CLAUDE.md worker rules to its config
+5. Parent creates issues with `gt-to:<worker-id>` label
+6. Worker polls, claims, branches, PRs, done
+
+### Communication
+
+All communication happens through GitHub:
+- **Issues** with `gt-task` labels for work assignments
+- **PRs** with `needs-review` label for code delivery
+- **Comments** on issues/PRs for status updates
+- **Labels** for lifecycle tracking (`pending` -> `claimed` -> `done`)
+
+## Customization
+
+### For a new project/org
+
+1. Update `CLAUDE.md`:
+   - Change org name from `Deepwork-AI` to yours
+   - Update repo list
+   - Update project board numbers
+   - Update service registry bead IDs
+
+2. Update `mayor/rigs.json.template`:
+   - Add your repos with correct git URLs and bead prefixes
+
+3. Update `settings/config.json`:
+   - Adjust model allocation based on your budget
+   - Sonnet-only config works fine for cost savings
+
+4. Create labels on your repos:
+   ```bash
+   # Run this for each repo
+   for LABEL in "gt-task" "gt-from:gt-local" "gt-to:gt-docker" \
+     "gt-status:pending" "gt-status:claimed" "gt-status:done" \
+     "needs-review" "approved" "priority:p0" "priority:p1" "priority:p2"; do
+     gh label create "$LABEL" --repo your-org/your-repo
+   done
+   ```
+
+## License
+
+MIT. Use this to build your own army.
+
+---
+
+Built by [Deepwork AI](https://github.com/Deepwork-AI) with [Gas Town](https://github.com/freebird-ai).

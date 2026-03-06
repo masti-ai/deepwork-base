@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "rigs": {
+    "example_project": {
+      "git_url": "git@github.com:YourOrg/your-repo.git",
+      "added_at": "2026-01-01T00:00:00Z",
+      "beads": {
+        "repo": "",
+        "prefix": "ex"
+      }
+    }
+  }
+}

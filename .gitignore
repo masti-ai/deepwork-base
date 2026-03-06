@@ -1,0 +1,17 @@
+# Secrets
+.env
+*.pem
+*.key
+
+# Runtime state
+deacon/heartbeat.json
+deacon/state.json
+witness/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
