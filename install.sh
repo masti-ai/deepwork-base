@@ -55,6 +55,12 @@ if [ -d "$INSTALL_DIR/skills/gt-mesh-contributor" ]; then
   echo "       gt-mesh-contributor skill installed"
 fi
 
+# Copy mesh-setup skill (interactive wizard)
+if [ -d "$INSTALL_DIR/skills/gt-mesh-setup" ]; then
+  cp -r "$INSTALL_DIR/skills/gt-mesh-setup" "$SKILLS_DIR/gt-mesh-setup"
+  echo "       gt-mesh-setup skill installed"
+fi
+
 echo "       Skills dir: $SKILLS_DIR"
 
 # Step 3: Add Excalidraw MCP server
