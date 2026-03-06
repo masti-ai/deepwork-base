@@ -1,311 +1,206 @@
-# gtconfig
+# GT Mesh
 
-Production Gas Town configuration. Clone this into a new GT instance to replicate the Deepwork AI multi-agent engineering system.
+**Connect multiple Gas Towns into a collaborative coding network.**
 
-## What is Gas Town?
+GT Mesh is a plugin for [Gas Town](https://github.com/Deepwork-AI/gasclaw) that lets developers invite each other into a shared AI-powered workspace. Your friend joins your mesh, creates tasks (beads), and your agents build the features. Multiplayer vibe coding.
 
-Gas Town is a multi-agent software engineering system. One human founder, 200+ AI agents, shipping production code 24/7. This repo contains the configuration files, templates, and conventions that make it work.
+## How It Works
+
+```
+You (running Gas Town)                    Your friend (running Gas Town)
+       |                                          |
+  gt mesh init                               gt mesh join MESH-A7K9
+       |                                          |
+  gt mesh invite --expires 24h                    |
+       |                                          |
+  Share code: MESH-A7K9  ────────────────>  Pastes code
+       |                                          |
+       |                                   Can see your project
+       |                                   Creates beads (tasks)
+       |                                          |
+  Mayor reviews  <──── mail sync ────────  "Add dark mode"
+       |
+  Accepts -> polecat builds it
+       |
+  "PR merged" ─────── mail sync ────────>  Gets notified
+```
 
 ## Quick Start
 
-```bash
-# 1. Initialize a new Gas Town
-gt init my-town
-
-# 2. Copy config files into your GT
-cp -r gtconfig/mayor/ my-town/mayor/
-cp -r gtconfig/settings/ my-town/settings/
-cp -r gtconfig/deacon/ my-town/deacon/
-cp gtconfig/CLAUDE.md my-town/CLAUDE.md
-
-# 3. Edit town.json with your instance ID
-vim my-town/mayor/town.json
-# Change instance_id, owner, name
-
-# 4. Edit rigs.json with your repos
-vim my-town/mayor/rigs.json
-
-# 5. Prime the GT
-cd my-town && gt prime
-```
-
-## Repo Structure
-
-```
-gtconfig/
-├── README.md                    You are here
-├── CLAUDE.md                    Master instruction file (read by ALL agents)
-│
-├── mayor/                       Mayor (coordinator) config
-│   ├── town.json               GT instance identity
-│   ├── rigs.json.template      Rig-to-repo mapping (edit for your repos)
-│   ├── daemon.json             Daemon patrol config (heartbeat, dogs, intervals)
-│   ├── overseer.json.template  Human overseer identity
-│   └── multi-gt-worker-instructions.md
-│                                Handoff doc for worker GT instances
-│
-├── settings/                    Town-wide settings
-│   ├── config.json             Agent model config (which model for which role)
-│   └── escalation.json         Escalation routing (critical/high/medium/low)
-│
-├── deacon/                      Deacon (supervisor) config
-│   └── dogs/                   Dog patrol directories (auto-populated)
-│
-├── formulas/                    Bead formulas (mol templates for automation)
-│   └── *.formula.toml          All production formulas
-│
-├── templates/                   Reusable templates
-│   ├── repo/
-│   │   ├── AGENTS.md           Agent instructions for repos
-│   │   ├── CONTRIBUTING.md     Contribution guidelines template
-│   │   └── .github/
-│   │       └── PULL_REQUEST_TEMPLATE.md
-│   └── pr/
-│       ├── release-pr.md       dev -> main PR template
-│       └── release-notes.md    GitHub release notes template
-│
-├── memory/                      Mayor memory templates
-│   ├── MEMORY.md               Persistent memory structure
-│   └── mistakes.md             Incident log template
-│
-├── skills/                      Claude Code skills
-│   └── excalidraw-diagram-generator/
-│       ├── SKILL.md             Skill definition
-│       ├── scripts/             Python helper scripts
-│       ├── references/          Schema + element docs
-│       └── templates/           Starter diagram templates
-│
-├── plugins/                     Claude Code plugins
-│   └── README.md                Plugin registry (add yours here)
-│
-└── agents/                      Agent role configs
-    ├── mayor.md                 Mayor role description
-    ├── worker.md                Worker GT role description
-    └── reviewer.md              Reviewer role description
-```
-
-## Configuration Files
-
-### CLAUDE.md (the brain)
-
-The master instruction file read by every agent in the GT. Contains:
-- Release workflow (dev -> main, consolidated PRs)
-- GitHub sync rules (beads -> issues, epic-level sync)
-- Deployment URL management (service registry beads)
-- GitHub organization management
-- Project management (Kanban + Roadmap boards)
-- Releases & versioning (semver, release notes)
-- Multi-GT coordination (parent/worker roles, issue lifecycle)
-
-### town.json (identity)
-
-```json
-{
-  "instance_id": "gt-local",     // Unique ID for this GT instance
-  "github_sync": {
-    "enabled": true,
-    "accept_tasks_from": ["gt-docker"]  // Which GTs can assign work here
-  }
-}
-```
-
-### settings/config.json (model allocation)
-
-Controls which AI model powers each role:
-- **Mayor** (coordinator): Opus — needs deep reasoning
-- **Polecat** (worker): Opus — needs to write good code
-- **Deacon/Witness/Refinery** (supervisors): Sonnet — cost-effective for monitoring
-- **Dog** (patrols): Sonnet — lightweight checks
-
-### daemon.json (automation)
-
-Configures the daemon's patrol cycle:
-- **Heartbeat**: 3-minute pulse
-- **Refinery**: 5-minute code quality patrols
-- **Witness**: 5-minute state verification
-- **Doctor dog**: 5-minute health checks
-- **Wisp reaper**: 30-minute cleanup of stale wisps
-- **Backup**: 15-minute Dolt + JSONL backups
-
-## Skills & Plugins
-
-### Skills (`.claude/skills/`)
-
-Skills extend Claude Code with domain-specific capabilities. Copy the `skills/` directory into your GT's `.claude/skills/` path.
-
-**Included skills:**
-- **excalidraw-diagram-generator** — Generate architecture diagrams, flowcharts, mind maps, ER diagrams, and more as `.excalidraw` files from natural language descriptions
-
-### Plugins
-
-The `plugins/` directory holds any custom plugins. Currently a placeholder — add your own as needed.
-
-### Installation
+### Install the plugin
 
 ```bash
-# Copy skills into your GT's Claude config
-mkdir -p my-town/.claude/skills
-cp -r gtconfig/skills/* my-town/.claude/skills/
+# From inside your Gas Town directory
+gt plugin install Deepwork-AI/gt-mesh
 
-# Copy plugins
-cp -r gtconfig/plugins/ my-town/plugins/
+# Or manually
+git clone https://github.com/Deepwork-AI/gt-mesh.git .gt-mesh
 ```
 
-## Multi-GT Setup
+### Initialize mesh
 
-This GT is designed to coordinate multiple GT instances:
+```bash
+gt mesh init
+# Creates mesh.yaml — your identity on the network
+# Sets up DoltHub sync for cross-GT communication
+```
 
-| Role | Description |
-|------|-------------|
-| **Parent (gt-local)** | Creates issues, reviews PRs, merges, manages releases |
-| **Worker (gt-docker)** | Picks up issues, writes code, creates PRs to `dev` |
+### Invite a friend
 
-### Adding a new worker GT
+```bash
+gt mesh invite --role contributor --rigs my_project --expires 7d
+# Output: MESH-A7K9-XPLN
+# Share this code with your friend
+```
 
-1. Set up the new GT instance
-2. Copy `mayor/multi-gt-worker-instructions.md` to the worker
-3. Worker configures its `town.json` with a unique `instance_id`
-4. Worker adds the CLAUDE.md worker rules to its config
-5. Parent creates issues with `gt-to:<worker-id>` label
-6. Worker polls, claims, branches, PRs, done
+### Join a mesh (friend's side)
 
-### Communication
+```bash
+gt mesh join MESH-A7K9-XPLN
+# Connects to the mesh, syncs state, can see shared rigs
+```
 
-All communication happens through GitHub:
-- **Issues** with `gt-task` labels for work assignments
-- **PRs** with `needs-review` label for code delivery
-- **Comments** on issues/PRs for status updates
-- **Labels** for lifecycle tracking (`pending` -> `claimed` -> `done`)
+## Architecture
 
-## Customization
+```
+              ┌──────────────────────┐
+              │  DoltHub (backbone)  │
+              │  deepwork/gt-mesh    │
+              │                      │
+              │  messages | peers    │
+              │  channels | access   │
+              │  skills   | invites  │
+              └──────────┬───────────┘
+                         │
+          ┌──────────────┼──────────────┐
+          │              │              │
+     ┌────▼────┐   ┌────▼────┐   ┌────▼────┐
+     │  GT #1  │   │  GT #2  │   │  GT #3  │
+     │ (owner) │   │(contrib)│   │(worker) │
+     └─────────┘   └─────────┘   └─────────┘
+```
 
-### For a new project/org
+Every Gas Town syncs with one central DoltHub database. No point-to-point connections. Scales linearly to 20+ nodes.
 
-1. Update `CLAUDE.md`:
-   - Change org name from `Deepwork-AI` to yours
-   - Update repo list
-   - Update project board numbers
-   - Update service registry bead IDs
+## What Can Mesh Members Do?
 
-2. Update `mayor/rigs.json.template`:
-   - Add your repos with correct git URLs and bead prefixes
+| Role | Read code | Create beads | Chat with agents | Execute work | Merge PRs |
+|------|-----------|-------------|-----------------|-------------|-----------|
+| **Owner** | Yes | Yes | Yes | Yes | Yes |
+| **Contributor** | Yes (shared rigs) | Yes (review gate) | Via mesh mail | No (owner's polecats do it) | No |
+| **Worker** | Yes (assigned rigs) | Yes | Via mesh mail | Yes (own polecats) | No (owner reviews) |
+| **Reviewer** | Yes | Yes | Via mesh mail | No | Yes |
 
-3. Update `settings/config.json`:
-   - Adjust model allocation based on your budget
-   - Sonnet-only config works fine for cost savings
+## Contribution Flow
 
-4. Create labels on your repos:
-   ```bash
-   # Run this for each repo
-   for LABEL in "gt-task" "gt-from:gt-local" "gt-to:gt-docker" \
-     "gt-status:pending" "gt-status:claimed" "gt-status:done" \
-     "needs-review" "approved" "priority:p0" "priority:p1" "priority:p2"; do
-     gh label create "$LABEL" --repo your-org/your-repo
-   done
-   ```
+Contributors don't get direct access to your agents or filesystem. They use their own Gas Town to understand your code, then create beads (tasks) that flow through a review gate:
+
+1. Contributor creates a bead on your shared rig
+2. Your Mayor gets a mesh mail notification
+3. You accept or reject the contribution
+4. If accepted, your polecats pick it up and build it
+5. Contributor gets notified when the PR is ready
+
+## Shared Skills
+
+Skills are shared across the mesh. When a node publishes a skill, other nodes can adopt it:
+
+```bash
+# List skills available on the mesh
+gt mesh skills
+
+# Install a skill from the mesh
+gt mesh skill install excalidraw-diagram-generator
+
+# Share one of your skills to the mesh
+gt mesh skill publish my-custom-skill
+```
+
+## Mesh Commands
+
+```bash
+# Setup
+gt mesh init                          # Initialize mesh plugin
+gt mesh join <code>                   # Join an existing mesh
+
+# Invites & Access
+gt mesh invite [--role R] [--rigs R]  # Generate invite code
+gt mesh revoke <gt-id>                # Revoke access
+gt mesh access list                   # Show access table
+
+# Communication
+gt mesh send <gt-id> "subject" "body" # Send cross-GT message
+gt mesh inbox                         # Check incoming messages
+gt mesh peers                         # List connected Gas Towns
+
+# Contributions
+gt mesh contributions                 # Pending contributions to review
+gt mesh accept <bead-id>              # Accept a contribution
+gt mesh reject <bead-id> --reason "." # Reject with reason
+
+# Skills
+gt mesh skills                        # List mesh skills
+gt mesh skill install <name>          # Install from mesh
+gt mesh skill publish <name>          # Share to mesh
+
+# Status
+gt mesh status                        # Full mesh dashboard
+gt mesh sync                          # Force sync now
+gt mesh log                           # Recent sync activity
+```
+
+## mesh.yaml
+
+Your identity and mesh configuration:
+
+```yaml
+version: 1
+
+instance:
+  id: "gt-local"
+  name: "My Gas Town"
+  role: "coordinator"       # coordinator | worker | contributor
+  owner:
+    name: "Your Name"
+    email: "you@example.com"
+
+dolthub:
+  org: "deepwork"
+  database: "gt-mesh-mail"
+  sync_interval: "2m"
+
+shared_rigs:
+  - name: "my_project"
+    visibility: "invite-only"
+    accept_contributions: true
+
+defaults:
+  contributor_expiry: "7d"
+  auto_accept_beads: false
+```
+
+## Scaling
+
+| Mesh Size | Sync Load | Works? |
+|-----------|----------|--------|
+| 2-5 GTs | Light | Great |
+| 5-20 GTs | Moderate | Good |
+| 20-50 GTs | Heavy | Needs longer sync intervals |
+| 50+ GTs | Too heavy | Needs relay architecture |
+
+GT Mesh uses a hub-and-spoke model via DoltHub. All nodes sync to one database. Messages are append-only — no merge conflicts. Adding a node = one more sync client.
+
+## Related Projects
+
+- [Gas Town](https://github.com/steveyegge/gastown) — The multi-agent workspace GT Mesh extends
+- [Gasclaw](https://github.com/Deepwork-AI/gasclaw) — Single-container Gas Town deployment
+- [Beads](https://github.com/steveyegge/beads) — Git-backed issue tracking used by GT Mesh
+- [Dolt](https://github.com/dolthub/dolt) — Git-for-data database powering the mesh backbone
 
 ## License
 
-MIT. Use this to build your own army.
+MIT
 
 ---
 
-## GT Worker Template (NEW)
-
-**Rapidly spawn new worker GTs with full agent configuration.**
-
-```bash
-# Clone the template
-cp -r gtconfig/templates/gt-worker ~/my-new-worker
-cd ~/my-new-worker
-
-# Customize
-vim mayor/town.json  # Change instance_id
-vim mayor/rigs.json  # Set your repos
-
-# Initialize
-gt init .
-gt prime
-```
-
-### What's Included
-
-- **3 Pre-configured Agents:**
-  - 👽 Chad Ji (master orchestrator)
-  - 👔 Muhchodu (business operator)
-  - 🎨 GigaGirl (content brainstormer)
-  
-- **Complete Setup:**
-  - Mayor, daemon, settings configs
-  - Agent SOUL.md, IDENTITY.md, USER.md
-  - HEARTBEAT.md for periodic checks
-
-### Template Location
-
-```
-templates/gt-worker/
-├── README.md                 # Quick start guide
-├── mayor/
-│   ├── town.json            # Edit: instance_id
-│   ├── rigs.json            # Edit: your repos
-│   └── daemon.json          # Patrol config
-├── agents/
-│   ├── chad-ji/             # Master orchestrator
-│   ├── muhchodu/            # Business agent
-│   └── gigagirl/            # Content agent
-└── memory/                  # Network knowledge
-    ├── MISTAKES.md          # Shared learnings
-    ├── SHARED_KNOWLEDGE.md  # Tips & tricks
-    └── RULES.md             # Hard constraints
-```
-
----
-
-## GT Network Knowledge Sharing
-
-**All GT instances share knowledge.**
-
-When you spawn a new worker from the template, it gets:
-
-1. **MISTAKES.md** — Documented failures and fixes from all GTs
-2. **SHARED_KNOWLEDGE.md** — Tips, tricks, quick reference
-3. **RULES.md** — Absolute constraints (never break these)
-
-### How Knowledge Flows
-
-```
-Parent GT (gt-local)          Worker GTs (gt-docker, gt-worker-001, etc.)
-        |                               |
-        |  Maintains master copies      |
-        |  of MISTAKES.md               |
-        |  SHARED_KNOWLEDGE.md          |
-        |  RULES.md                     |
-        |------------------------------>|
-        |                        Workers pull updates
-        |
-        <------------------------------|
-                 Workers push new learnings via PRs
-```
-
-### Contributing Knowledge
-
-When you learn something:
-
-1. Update `templates/gt-worker/memory/MISTAKES.md` or `SHARED_KNOWLEDGE.md`
-2. Commit and push to `gtconfig`
-3. Other GTs pull the updates
-
-**Format for MISTAKES.md:**
-```markdown
-## YYYY-MM-DD: Brief description
-
-**Instance:** gt-docker
-**Context:** What you were doing
-**Mistake:** What went wrong
-**Fix:** How you fixed it
-**Lesson:** What others should know
-```
-
----
-
-Built by [Deepwork AI](https://github.com/Deepwork-AI) with [Gas Town](https://github.com/freebird-ai).
+Built by [Deepwork AI](https://github.com/Deepwork-AI) with [Gas Town](https://github.com/steveyegge/gastown).
