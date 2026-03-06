@@ -159,6 +159,35 @@ access_control:
     #       require_tests: true        # Must include tests
 
 # =============================================================================
+# BEHAVIORAL ROLES — Default behavior preferences for GTs
+# =============================================================================
+# Roles are SOFT PREFERENCES, not hard blocks. Any GT can step in and do
+# any work when needed — all agents have full context. The role just sets
+# the default behavior so agents know what to prioritize.
+#
+# Three roles:
+#   planner  — Delegates by default. Creates beads, assigns work, reviews PRs.
+#              Can write code if workers are unavailable or task is small.
+#   worker   — Executes by default. Writes code, creates PRs.
+#              Does not merge own PRs. Does not assign work to others.
+#   reviewer — Reviews by default. Approves/rejects PRs, merges.
+#              Quality gate between worker output and production.
+#
+# Configurable per GT. Anyone can change their role in mesh.yaml.
+# =============================================================================
+behavioral_role:
+  # This GT's default role
+  this_gt: "planner"                     # planner | worker | reviewer
+
+  # Known peers and their roles
+  peer_roles: {}
+    # Example:
+    # gt-docker:
+    #   role: "worker"
+    #   specialties: ["backend", "infrastructure"]
+    #   max_concurrent: 3
+
+# =============================================================================
 # SHARED RIGS — Which rigs are visible on the mesh
 # =============================================================================
 shared_rigs:
