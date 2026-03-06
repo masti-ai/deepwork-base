@@ -38,6 +38,13 @@ crons:
     purpose: "Broadcast work digest to mesh peers every 2 hours"
     created: "2026-03-06"
 
+  cron-audit:
+    schedule: "0 6 * * *"
+    command: "bash /home/pratham2/gt/.gt-mesh/scripts/cron-audit.sh --enforce >> /tmp/cron-audit.log 2>&1"
+    owner: "gt-local"
+    purpose: "Daily audit: verify crontab matches cron-registry.yaml, fix mismatches"
+    created: "2026-03-06"
+
 # REMOVED:
 #  check-gtconfig-issues:
 #    schedule: "*/30 * * * *"
