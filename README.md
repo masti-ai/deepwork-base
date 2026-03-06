@@ -68,6 +68,16 @@ gtconfig/
 │   ├── MEMORY.md               Persistent memory structure
 │   └── mistakes.md             Incident log template
 │
+├── skills/                      Claude Code skills
+│   └── excalidraw-diagram-generator/
+│       ├── SKILL.md             Skill definition
+│       ├── scripts/             Python helper scripts
+│       ├── references/          Schema + element docs
+│       └── templates/           Starter diagram templates
+│
+├── plugins/                     Claude Code plugins
+│   └── README.md                Plugin registry (add yours here)
+│
 └── agents/                      Agent role configs
     ├── mayor.md                 Mayor role description
     ├── worker.md                Worker GT role description
@@ -116,6 +126,30 @@ Configures the daemon's patrol cycle:
 - **Doctor dog**: 5-minute health checks
 - **Wisp reaper**: 30-minute cleanup of stale wisps
 - **Backup**: 15-minute Dolt + JSONL backups
+
+## Skills & Plugins
+
+### Skills (`.claude/skills/`)
+
+Skills extend Claude Code with domain-specific capabilities. Copy the `skills/` directory into your GT's `.claude/skills/` path.
+
+**Included skills:**
+- **excalidraw-diagram-generator** — Generate architecture diagrams, flowcharts, mind maps, ER diagrams, and more as `.excalidraw` files from natural language descriptions
+
+### Plugins
+
+The `plugins/` directory holds any custom plugins. Currently a placeholder — add your own as needed.
+
+### Installation
+
+```bash
+# Copy skills into your GT's Claude config
+mkdir -p my-town/.claude/skills
+cp -r gtconfig/skills/* my-town/.claude/skills/
+
+# Copy plugins
+cp -r gtconfig/plugins/ my-town/plugins/
+```
 
 ## Multi-GT Setup
 
