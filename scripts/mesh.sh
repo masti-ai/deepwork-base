@@ -108,8 +108,8 @@ case "$cmd" in
   auto-sync)
     _run "$SCRIPTS_DIR/mesh-auto-sync.sh" "$@"
     ;;
-  packs)
-    _run "$SCRIPTS_DIR/mesh-packs.sh" "$@"
+  blueprints)
+    _run "$SCRIPTS_DIR/mesh-blueprints.sh" "$@"
     ;;
   improve)
     _run "$SCRIPTS_DIR/mesh-improve.sh" "$@"
@@ -136,7 +136,7 @@ case "$cmd" in
     echo "  beads         Shared beads — list, share, claim, unclaim"
     echo "  skills        Shared skills — list, publish, install"
     echo "  config        Mesh config — publish, pull, diff, status"
-    echo "  packs         Pack registry — list, install, publish, create"
+    echo "  blueprints    Blueprint registry — list, install, publish, create"
     echo "  auto-sync     Broadcast work context — log, digest, broadcast"
     echo "  improve       Self-improving loop — report, review, graduate"
     echo "  help          Show this help"

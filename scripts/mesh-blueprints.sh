@@ -1,25 +1,25 @@
 #!/bin/bash
-# GT Mesh — Packs: shareable bundles of mesh knowledge
+# GT Mesh — Blueprints: shareable bundles of mesh knowledge
 #
-# A pack bundles skills, roles, rules, templates, and knowledge into
-# a single installable unit. Published to DoltHub, browsable by any node.
+# A blueprint bundles skills, roles, rules, templates, and knowledge into
+# a single installable blueprint unit. Published to DoltHub, browsable by any node.
 #
 # Usage:
-#   mesh-packs.sh list                          Browse available packs
-#   mesh-packs.sh info <pack-name>              Show pack details
-#   mesh-packs.sh install <pack-name>           Install a pack
-#   mesh-packs.sh uninstall <pack-name>         Remove an installed pack
-#   mesh-packs.sh publish <dir>                 Publish a pack from a directory
-#   mesh-packs.sh create <name>                 Scaffold a new pack
-#   mesh-packs.sh installed                     List installed packs
-#   mesh-packs.sh search <query>                Search packs by keyword
+#   mesh-blueprints.sh list                          Browse available packs
+#   mesh-blueprints.sh info <pack-name>              Show pack details
+#   mesh-blueprints.sh install <pack-name>           Install a pack
+#   mesh-blueprints.sh uninstall <pack-name>         Remove an installed pack
+#   mesh-blueprints.sh publish <dir>                 Publish a pack from a directory
+#   mesh-blueprints.sh create <name>                 Scaffold a new blueprint
+#   mesh-blueprints.sh installed                     List installed packs
+#   mesh-blueprints.sh search <query>                Search packs by keyword
 
 GT_ROOT="${GT_ROOT:-.}"
 MESH_YAML="${MESH_YAML:-$GT_ROOT/mesh.yaml}"
 CLONE_DIR=$(grep "clone_dir:" "$MESH_YAML" 2>/dev/null | head -1 | sed 's/.*: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/')
 CLONE_DIR="${CLONE_DIR:-/tmp/mesh-sync-clone}"
 DOLTHUB_DB="deepwork/gt-agent-mail"
-PACKS_DIR="$GT_ROOT/.mesh-packs"
+BLUEPRINTS_DIR="$GT_ROOT/.mesh-blueprints"
 
 if [ ! -f "$MESH_YAML" ]; then
   echo "[error] Not in a mesh. Run: gt mesh init"
@@ -44,7 +44,7 @@ _ensure_clone() {
 }
 
 _ensure_tables() {
-  dolt sql -q "CREATE TABLE IF NOT EXISTS mesh_packs (
+  dolt sql -q "CREATE TABLE IF NOT EXISTS mesh_blueprints (
     name VARCHAR(128) PRIMARY KEY,
     version VARCHAR(16) NOT NULL DEFAULT '1.0.0',
     description VARCHAR(512),
@@ -57,12 +57,12 @@ _ensure_tables() {
     contains_templates INT DEFAULT 0,
     contains_knowledge INT DEFAULT 0,
     installs INT DEFAULT 0,
-    pack_hash VARCHAR(128),
+    blueprint_hash VARCHAR(128),
     published_at DATETIME,
     updated_at DATETIME
   );" 2>/dev/null || true
 
-  dolt sql -q "CREATE TABLE IF NOT EXISTS mesh_pack_files (
+  dolt sql -q "CREATE TABLE IF NOT EXISTS mesh_blueprint_files (
     pack_name VARCHAR(128) NOT NULL,
     path VARCHAR(256) NOT NULL,
     file_type VARCHAR(32) NOT NULL,
@@ -72,17 +72,17 @@ _ensure_tables() {
   );" 2>/dev/null || true
 }
 
-_read_pack_yaml() {
-  local PACK_DIR="$1"
+_read_blueprint_yaml() {
+  local BLUEPRINT_DIR="$1"
   local FIELD="$2"
-  grep "^${FIELD}:" "$PACK_DIR/pack.yaml" 2>/dev/null | head -1 | sed 's/^[^:]*: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/'
+  grep "^${FIELD}:" "$BLUEPRINT_DIR/blueprint.yaml" 2>/dev/null | head -1 | sed 's/^[^:]*: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/'
 }
 
-_read_pack_yaml_list() {
-  local PACK_DIR="$1"
+_read_blueprint_yaml_list() {
+  local BLUEPRINT_DIR="$1"
   local SECTION="$2"
   # Extract items under a section (lines starting with "  - ")
-  awk "/^${SECTION}:/{found=1;next} /^[^ ]/{found=0} found && /^  - /{gsub(/^  - /,\"\"); print}" "$PACK_DIR/pack.yaml" 2>/dev/null
+  awk "/^${SECTION}:/{found=1;next} /^[^ ]/{found=0} found && /^  - /{gsub(/^  - /,\"\"); print}" "$BLUEPRINT_DIR/blueprint.yaml" 2>/dev/null
 }
 
 SUBCMD="${1:-help}"
@@ -95,11 +95,11 @@ case "$SUBCMD" in
     _ensure_tables
 
     echo "==========================================="
-    echo "  Mesh Pack Registry"
+    echo "  Mesh Blueprint Registry"
     echo "==========================================="
     echo ""
 
-    PACKS=$(dolt sql -q "SELECT CONCAT(name, '|', version, '|', author, '|', installs, '|', COALESCE(description, '')) FROM mesh_packs ORDER BY installs DESC, name;" -r csv 2>/dev/null | tail -n +2 | sed 's/^"//;s/"$//')
+    PACKS=$(dolt sql -q "SELECT CONCAT(name, '|', version, '|', author, '|', installs, '|', COALESCE(description, '')) FROM mesh_blueprints ORDER BY installs DESC, name;" -r csv 2>/dev/null | tail -n +2 | sed 's/^"//;s/"$//')
 
     if [ -z "$PACKS" ]; then
       echo "  No packs published yet."
@@ -115,7 +115,7 @@ case "$SUBCMD" in
         [ ${#desc} -gt 40 ] && desc="${desc:0:37}..."
         # Mark installed packs
         MARKER=" "
-        [ -d "$PACKS_DIR/$name" ] && MARKER="*"
+        [ -d "$BLUEPRINTS_DIR/$name" ] && MARKER="*"
         printf "  %s%-23s %-8s %-14s %-6s %s\n" "$MARKER" "$name" "$ver" "$author" "$inst" "$desc"
       done <<< "$PACKS"
       echo ""
@@ -138,15 +138,15 @@ case "$SUBCMD" in
     echo "Searching for '$QUERY'..."
     echo ""
 
-    RESULTS=$(dolt sql -q "SELECT CONCAT(name, '|', version, '|', author, '|', COALESCE(description, '')) FROM mesh_packs WHERE name LIKE '%${QUERY}%' OR description LIKE '%${QUERY}%' OR tags LIKE '%${QUERY}%' ORDER BY installs DESC;" -r csv 2>/dev/null | tail -n +2 | sed 's/^"//;s/"$//')
+    RESULTS=$(dolt sql -q "SELECT CONCAT(name, '|', version, '|', author, '|', COALESCE(description, '')) FROM mesh_blueprints WHERE name LIKE '%${QUERY}%' OR description LIKE '%${QUERY}%' OR tags LIKE '%${QUERY}%' ORDER BY installs DESC;" -r csv 2>/dev/null | tail -n +2 | sed 's/^"//;s/"$//')
 
     if [ -z "$RESULTS" ]; then
-      echo "  No packs found matching '$QUERY'"
+      echo "  No blueprints found matching '$QUERY'"
     else
       while IFS='|' read -r name ver author desc; do
         [ -z "$name" ] && continue
         MARKER=" "
-        [ -d "$PACKS_DIR/$name" ] && MARKER="*"
+        [ -d "$BLUEPRINTS_DIR/$name" ] && MARKER="*"
         echo "  ${MARKER}${name} (v${ver}) by ${author}"
         [ -n "$desc" ] && echo "    $desc"
       done <<< "$RESULTS"
@@ -166,28 +166,28 @@ case "$SUBCMD" in
     _ensure_tables
 
     # Check if pack exists
-    EXISTS=$(dolt sql -q "SELECT name FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    EXISTS=$(dolt sql -q "SELECT name FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
     if [ -z "$EXISTS" ]; then
       echo "[error] Pack '$PACK_NAME' not found"
       exit 1
     fi
 
     # Fetch fields individually to avoid CSV mangling
-    VER=$(dolt sql -q "SELECT version FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
-    DESC=$(dolt sql -q "SELECT COALESCE(description, '') FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1 | sed 's/^"//;s/"$//')
-    AUTHOR=$(dolt sql -q "SELECT author FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
-    AUTHOR_GH=$(dolt sql -q "SELECT COALESCE(author_github, '') FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
-    TAGS=$(dolt sql -q "SELECT COALESCE(tags, '') FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1 | sed 's/^"//;s/"$//')
-    INSTALLS=$(dolt sql -q "SELECT installs FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
-    N_SKILLS=$(dolt sql -q "SELECT contains_skills FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
-    N_ROLES=$(dolt sql -q "SELECT contains_roles FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
-    N_RULES=$(dolt sql -q "SELECT contains_rules FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
-    N_TEMPLATES=$(dolt sql -q "SELECT contains_templates FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
-    N_KNOWLEDGE=$(dolt sql -q "SELECT contains_knowledge FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
-    PUBLISHED=$(dolt sql -q "SELECT CAST(published_at AS CHAR) FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    VER=$(dolt sql -q "SELECT version FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    DESC=$(dolt sql -q "SELECT COALESCE(description, '') FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1 | sed 's/^"//;s/"$//')
+    AUTHOR=$(dolt sql -q "SELECT author FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    AUTHOR_GH=$(dolt sql -q "SELECT COALESCE(author_github, '') FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    TAGS=$(dolt sql -q "SELECT COALESCE(tags, '') FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1 | sed 's/^"//;s/"$//')
+    INSTALLS=$(dolt sql -q "SELECT installs FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    N_SKILLS=$(dolt sql -q "SELECT contains_skills FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    N_ROLES=$(dolt sql -q "SELECT contains_roles FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    N_RULES=$(dolt sql -q "SELECT contains_rules FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    N_TEMPLATES=$(dolt sql -q "SELECT contains_templates FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    N_KNOWLEDGE=$(dolt sql -q "SELECT contains_knowledge FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    PUBLISHED=$(dolt sql -q "SELECT CAST(published_at AS CHAR) FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
 
     echo "==========================================="
-    echo "  Pack: $PACK_NAME"
+    echo "  Blueprint: $PACK_NAME"
     echo "==========================================="
     echo ""
     echo "  Version:     $VER"
@@ -206,7 +206,7 @@ case "$SUBCMD" in
     echo ""
 
     # List files in pack
-    FILES=$(dolt sql -q "SELECT CONCAT(file_type, '|', path) FROM mesh_pack_files WHERE pack_name = '$PACK_NAME' ORDER BY file_type, path;" -r csv 2>/dev/null | tail -n +2 | sed 's/^"//;s/"$//')
+    FILES=$(dolt sql -q "SELECT CONCAT(file_type, '|', path) FROM mesh_blueprint_files WHERE pack_name = '$PACK_NAME' ORDER BY file_type, path;" -r csv 2>/dev/null | tail -n +2 | sed 's/^"//;s/"$//')
     if [ -n "$FILES" ]; then
       echo "  Files:"
       while IFS='|' read -r ftype fpath; do
@@ -217,9 +217,9 @@ case "$SUBCMD" in
     fi
 
     # Show install status
-    if [ -d "$PACKS_DIR/$PACK_NAME" ]; then
+    if [ -d "$BLUEPRINTS_DIR/$PACK_NAME" ]; then
       LOCAL_VER=""
-      [ -f "$PACKS_DIR/$PACK_NAME/pack.yaml" ] && LOCAL_VER=$(_read_pack_yaml "$PACKS_DIR/$PACK_NAME" "version")
+      [ -f "$BLUEPRINTS_DIR/$PACK_NAME/blueprint.yaml" ] && LOCAL_VER=$(_read_blueprint_yaml "$BLUEPRINTS_DIR/$PACK_NAME" "version")
       echo "  Status: INSTALLED (local v${LOCAL_VER:-unknown})"
     else
       echo "  Status: NOT INSTALLED"
@@ -240,21 +240,21 @@ case "$SUBCMD" in
     _ensure_tables
 
     # Check if pack exists
-    EXISTS=$(dolt sql -q "SELECT name FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    EXISTS=$(dolt sql -q "SELECT name FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
     if [ -z "$EXISTS" ]; then
       echo "[error] Pack '$PACK_NAME' not found in registry"
       exit 1
     fi
 
-    VER=$(dolt sql -q "SELECT version FROM mesh_packs WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    VER=$(dolt sql -q "SELECT version FROM mesh_blueprints WHERE name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1)
 
-    echo "Installing pack: $PACK_NAME v$VER..."
+    echo "Installing blueprint: $PACK_NAME v$VER..."
     echo ""
 
-    mkdir -p "$PACKS_DIR/$PACK_NAME"
+    mkdir -p "$BLUEPRINTS_DIR/$PACK_NAME"
 
     # Pull all pack files
-    PATHS=$(dolt sql -q "SELECT path FROM mesh_pack_files WHERE pack_name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2)
+    PATHS=$(dolt sql -q "SELECT path FROM mesh_blueprint_files WHERE pack_name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2)
 
     FILE_COUNT=0
     SKILLS_INSTALLED=0
@@ -265,13 +265,13 @@ case "$SUBCMD" in
       [ -z "$fpath" ] && continue
       fpath=$(echo "$fpath" | sed 's/^"//;s/"$//')
 
-      FILE_TYPE=$(dolt sql -q "SELECT file_type FROM mesh_pack_files WHERE pack_name = '$PACK_NAME' AND path = '$fpath';" -r csv 2>/dev/null | tail -n +2 | head -1)
+      FILE_TYPE=$(dolt sql -q "SELECT file_type FROM mesh_blueprint_files WHERE pack_name = '$PACK_NAME' AND path = '$fpath';" -r csv 2>/dev/null | tail -n +2 | head -1)
 
       # Create parent dir in pack cache
-      mkdir -p "$PACKS_DIR/$PACK_NAME/$(dirname "$fpath")"
+      mkdir -p "$BLUEPRINTS_DIR/$PACK_NAME/$(dirname "$fpath")"
 
       # Pull content
-      dolt sql -q "SELECT content FROM mesh_pack_files WHERE pack_name = '$PACK_NAME' AND path = '$fpath';" -r csv 2>/dev/null | tail -n +2 | sed 's/^"//;s/"$//' | sed 's/""/"/g' > "$PACKS_DIR/$PACK_NAME/$fpath"
+      dolt sql -q "SELECT content FROM mesh_blueprint_files WHERE pack_name = '$PACK_NAME' AND path = '$fpath';" -r csv 2>/dev/null | tail -n +2 | sed 's/^"//;s/"$//' | sed 's/""/"/g' > "$BLUEPRINTS_DIR/$PACK_NAME/$fpath"
 
       # Apply based on type
       case "$FILE_TYPE" in
@@ -281,31 +281,31 @@ case "$SUBCMD" in
           [ "$SKILL_NAME" = "." ] && SKILL_NAME=$(basename "$fpath" .md)
           SKILL_DIR="$HOME/.claude/skills/$SKILL_NAME"
           mkdir -p "$SKILL_DIR"
-          cp "$PACKS_DIR/$PACK_NAME/$fpath" "$SKILL_DIR/SKILL.md"
+          cp "$BLUEPRINTS_DIR/$PACK_NAME/$fpath" "$SKILL_DIR/SKILL.md"
           SKILLS_INSTALLED=$((SKILLS_INSTALLED + 1))
           echo "  [skill]     $SKILL_NAME -> $SKILL_DIR/"
           ;;
         role)
           # Install role to mesh-config cache
           mkdir -p "$GT_ROOT/.mesh-config/roles"
-          cp "$PACKS_DIR/$PACK_NAME/$fpath" "$GT_ROOT/.mesh-config/roles/"
+          cp "$BLUEPRINTS_DIR/$PACK_NAME/$fpath" "$GT_ROOT/.mesh-config/roles/"
           ROLES_INSTALLED=$((ROLES_INSTALLED + 1))
           echo "  [role]      $(basename "$fpath")"
           ;;
         rule)
           mkdir -p "$GT_ROOT/.mesh-config/rules"
-          cp "$PACKS_DIR/$PACK_NAME/$fpath" "$GT_ROOT/.mesh-config/rules/"
+          cp "$BLUEPRINTS_DIR/$PACK_NAME/$fpath" "$GT_ROOT/.mesh-config/rules/"
           RULES_APPLIED=$((RULES_APPLIED + 1))
           echo "  [rule]      $(basename "$fpath")"
           ;;
         template)
           mkdir -p "$GT_ROOT/.mesh-config/templates"
-          cp "$PACKS_DIR/$PACK_NAME/$fpath" "$GT_ROOT/.mesh-config/templates/"
+          cp "$BLUEPRINTS_DIR/$PACK_NAME/$fpath" "$GT_ROOT/.mesh-config/templates/"
           echo "  [template]  $(basename "$fpath")"
           ;;
         knowledge)
           mkdir -p "$GT_ROOT/.mesh-config/knowledge"
-          cp "$PACKS_DIR/$PACK_NAME/$fpath" "$GT_ROOT/.mesh-config/knowledge/"
+          cp "$BLUEPRINTS_DIR/$PACK_NAME/$fpath" "$GT_ROOT/.mesh-config/knowledge/"
           echo "  [knowledge] $(basename "$fpath")"
           ;;
         *)
@@ -316,8 +316,8 @@ case "$SUBCMD" in
       FILE_COUNT=$((FILE_COUNT + 1))
     done <<< "$PATHS"
 
-    # Save pack.yaml locally for tracking
-    cat > "$PACKS_DIR/$PACK_NAME/pack.yaml" <<YAML
+    # Save blueprint.yaml locally for tracking
+    cat > "$BLUEPRINTS_DIR/$PACK_NAME/blueprint.yaml" <<YAML
 name: "$PACK_NAME"
 version: "$VER"
 installed_at: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -325,7 +325,7 @@ installed_by: "$GT_ID"
 YAML
 
     # Update install count
-    dolt sql -q "UPDATE mesh_packs SET installs = installs + 1 WHERE name = '$PACK_NAME';" 2>/dev/null
+    dolt sql -q "UPDATE mesh_blueprints SET installs = installs + 1 WHERE name = '$PACK_NAME';" 2>/dev/null
     dolt add . 2>/dev/null || true
     dolt commit -m "mesh: $GT_ID installed pack $PACK_NAME" --allow-empty 2>/dev/null || true
     dolt push 2>/dev/null || true
@@ -345,16 +345,16 @@ YAML
       exit 1
     fi
 
-    if [ ! -d "$PACKS_DIR/$PACK_NAME" ]; then
+    if [ ! -d "$BLUEPRINTS_DIR/$PACK_NAME" ]; then
       echo "[error] Pack '$PACK_NAME' is not installed"
       exit 1
     fi
 
     echo "Uninstalling: $PACK_NAME..."
 
-    if [ -d "$PACKS_DIR/$PACK_NAME" ]; then
+    if [ -d "$BLUEPRINTS_DIR/$PACK_NAME" ]; then
       # Remove skills
-      find "$PACKS_DIR/$PACK_NAME" -name "SKILL.md" -type f 2>/dev/null | while read -r skill_file; do
+      find "$BLUEPRINTS_DIR/$PACK_NAME" -name "SKILL.md" -type f 2>/dev/null | while read -r skill_file; do
         SKILL_NAME=$(basename "$(dirname "$skill_file")")
         [ "$SKILL_NAME" = "$PACK_NAME" ] && continue
         if [ -d "$HOME/.claude/skills/$SKILL_NAME" ]; then
@@ -364,7 +364,7 @@ YAML
       done
 
       # Remove roles
-      find "$PACKS_DIR/$PACK_NAME/roles" -type f 2>/dev/null | while read -r role_file; do
+      find "$BLUEPRINTS_DIR/$PACK_NAME/roles" -type f 2>/dev/null | while read -r role_file; do
         BASENAME=$(basename "$role_file")
         if [ -f "$GT_ROOT/.mesh-config/roles/$BASENAME" ]; then
           rm -f "$GT_ROOT/.mesh-config/roles/$BASENAME"
@@ -373,7 +373,7 @@ YAML
       done
 
       # Remove rules
-      find "$PACKS_DIR/$PACK_NAME/rules" -type f 2>/dev/null | while read -r rule_file; do
+      find "$BLUEPRINTS_DIR/$PACK_NAME/rules" -type f 2>/dev/null | while read -r rule_file; do
         BASENAME=$(basename "$rule_file")
         if [ -f "$GT_ROOT/.mesh-config/rules/$BASENAME" ]; then
           rm -f "$GT_ROOT/.mesh-config/rules/$BASENAME"
@@ -382,7 +382,7 @@ YAML
       done
 
       # Remove templates
-      find "$PACKS_DIR/$PACK_NAME/templates" -type f 2>/dev/null | while read -r tmpl_file; do
+      find "$BLUEPRINTS_DIR/$PACK_NAME/templates" -type f 2>/dev/null | while read -r tmpl_file; do
         BASENAME=$(basename "$tmpl_file")
         if [ -f "$GT_ROOT/.mesh-config/templates/$BASENAME" ]; then
           rm -f "$GT_ROOT/.mesh-config/templates/$BASENAME"
@@ -391,7 +391,7 @@ YAML
       done
 
       # Remove knowledge
-      find "$PACKS_DIR/$PACK_NAME/knowledge" -type f 2>/dev/null | while read -r know_file; do
+      find "$BLUEPRINTS_DIR/$PACK_NAME/knowledge" -type f 2>/dev/null | while read -r know_file; do
         BASENAME=$(basename "$know_file")
         if [ -f "$GT_ROOT/.mesh-config/knowledge/$BASENAME" ]; then
           rm -f "$GT_ROOT/.mesh-config/knowledge/$BASENAME"
@@ -400,7 +400,7 @@ YAML
       done
     fi
 
-    rm -rf "$PACKS_DIR/$PACK_NAME"
+    rm -rf "$BLUEPRINTS_DIR/$PACK_NAME"
     echo "Uninstalled: $PACK_NAME"
     echo ""
     ;;
@@ -411,22 +411,22 @@ YAML
     echo "==========================================="
     echo ""
 
-    if [ ! -d "$PACKS_DIR" ] || [ -z "$(ls -A "$PACKS_DIR" 2>/dev/null)" ]; then
-      echo "  No packs installed."
+    if [ ! -d "$BLUEPRINTS_DIR" ] || [ -z "$(ls -A "$BLUEPRINTS_DIR" 2>/dev/null)" ]; then
+      echo "  No blueprints installed."
       echo ""
       echo "  Browse: gt mesh packs list"
       echo ""
       exit 0
     fi
 
-    for pack_dir in "$PACKS_DIR"/*/; do
+    for pack_dir in "$BLUEPRINTS_DIR"/*/; do
       [ ! -d "$pack_dir" ] && continue
       PNAME=$(basename "$pack_dir")
       PVER=""
       PDATE=""
-      if [ -f "$pack_dir/pack.yaml" ]; then
-        PVER=$(_read_pack_yaml "$pack_dir" "version")
-        PDATE=$(_read_pack_yaml "$pack_dir" "installed_at")
+      if [ -f "$pack_dir/blueprint.yaml" ]; then
+        PVER=$(_read_blueprint_yaml "$pack_dir" "version")
+        PDATE=$(_read_blueprint_yaml "$pack_dir" "installed_at")
       fi
       FILE_COUNT=$(find "$pack_dir" -type f | wc -l)
       printf "  %-24s v%-8s %3d files  %s\n" "$PNAME" "${PVER:-?}" "$FILE_COUNT" "${PDATE:-unknown}"
@@ -448,12 +448,12 @@ YAML
       exit 1
     fi
 
-    echo "Creating pack scaffold: $PACK_NAME/"
+    echo "Creating blueprint scaffold: $PACK_NAME/"
     echo ""
 
     mkdir -p "$PACK_NAME"/{skills,roles,rules,templates,knowledge}
 
-    cat > "$PACK_NAME/pack.yaml" <<YAML
+    cat > "$PACK_NAME/blueprint.yaml" <<YAML
 # GT Mesh Pack Manifest
 # Publish with: gt mesh packs publish ./$PACK_NAME
 
@@ -489,7 +489,7 @@ YAML
     cat > "$PACK_NAME/knowledge/.gitkeep" <<< ""
 
     echo "  $PACK_NAME/"
-    echo "  ├── pack.yaml          (manifest — edit this)"
+    echo "  ├── blueprint.yaml          (manifest — edit this)"
     echo "  ├── skills/            (SKILL.md files)"
     echo "  ├── roles/             (role .yaml definitions)"
     echo "  ├── rules/             (governance rule sets)"
@@ -497,34 +497,34 @@ YAML
     echo "  └── knowledge/         (docs, patterns, conventions)"
     echo ""
     echo "Next steps:"
-    echo "  1. Edit pack.yaml with your details"
+    echo "  1. Edit blueprint.yaml with your details"
     echo "  2. Add files to the appropriate directories"
-    echo "  3. List files in pack.yaml under each section"
+    echo "  3. List files in blueprint.yaml under each section"
     echo "  4. Publish: gt mesh packs publish ./$PACK_NAME"
     echo ""
     ;;
 
   publish)
-    PACK_DIR="$1"
-    if [ -z "$PACK_DIR" ] || [ ! -f "$PACK_DIR/pack.yaml" ]; then
+    BLUEPRINT_DIR="$1"
+    if [ -z "$BLUEPRINT_DIR" ] || [ ! -f "$BLUEPRINT_DIR/blueprint.yaml" ]; then
       echo "Usage: gt mesh packs publish <directory>"
       echo ""
-      echo "The directory must contain a pack.yaml manifest."
+      echo "The directory must contain a blueprint.yaml manifest."
       exit 1
     fi
 
-    PACK_DIR=$(cd "$PACK_DIR" && pwd)
+    BLUEPRINT_DIR=$(cd "$BLUEPRINT_DIR" && pwd)
 
     # Read manifest
-    PACK_NAME=$(_read_pack_yaml "$PACK_DIR" "name")
-    PACK_VER=$(_read_pack_yaml "$PACK_DIR" "version")
-    PACK_DESC=$(_read_pack_yaml "$PACK_DIR" "description")
-    PACK_AUTHOR=$(_read_pack_yaml "$PACK_DIR" "author")
-    PACK_AUTHOR_GH=$(_read_pack_yaml "$PACK_DIR" "author_github")
-    PACK_TAGS=$(_read_pack_yaml "$PACK_DIR" "tags")
+    PACK_NAME=$(_read_blueprint_yaml "$BLUEPRINT_DIR" "name")
+    PACK_VER=$(_read_blueprint_yaml "$BLUEPRINT_DIR" "version")
+    PACK_DESC=$(_read_blueprint_yaml "$BLUEPRINT_DIR" "description")
+    PACK_AUTHOR=$(_read_blueprint_yaml "$BLUEPRINT_DIR" "author")
+    PACK_AUTHOR_GH=$(_read_blueprint_yaml "$BLUEPRINT_DIR" "author_github")
+    PACK_TAGS=$(_read_blueprint_yaml "$BLUEPRINT_DIR" "tags")
 
     if [ -z "$PACK_NAME" ]; then
-      echo "[error] pack.yaml missing 'name' field"
+      echo "[error] blueprint.yaml missing 'name' field"
       exit 1
     fi
 
@@ -532,7 +532,7 @@ YAML
     _ensure_tables
 
     echo "==========================================="
-    echo "  Publishing Pack: $PACK_NAME v$PACK_VER"
+    echo "  Publishing Blueprint: $PACK_NAME v$PACK_VER"
     echo "==========================================="
     echo ""
 
@@ -541,16 +541,16 @@ YAML
     ALL_HASHES=""
 
     # Clear old files for this pack
-    dolt sql -q "DELETE FROM mesh_pack_files WHERE pack_name = '$PACK_NAME';" 2>/dev/null || true
+    dolt sql -q "DELETE FROM mesh_blueprint_files WHERE pack_name = '$PACK_NAME';" 2>/dev/null || true
 
     _publish_files() {
       local SECTION="$1"
       local FILE_TYPE="$2"
 
-      _read_pack_yaml_list "$PACK_DIR" "$SECTION" | while IFS= read -r relpath; do
+      _read_blueprint_yaml_list "$BLUEPRINT_DIR" "$SECTION" | while IFS= read -r relpath; do
         [ -z "$relpath" ] && continue
         relpath=$(echo "$relpath" | sed 's/^"//;s/"$//' | xargs)
-        local FULL="$PACK_DIR/$relpath"
+        local FULL="$BLUEPRINT_DIR/$relpath"
 
         if [ ! -f "$FULL" ]; then
           echo "  [warn] File not found: $relpath"
@@ -561,7 +561,7 @@ YAML
         local CONTENT=$(cat "$FULL")
         local CONTENT_ESC=$(echo "$CONTENT" | sed "s/'/''/g")
 
-        dolt sql -q "REPLACE INTO mesh_pack_files (pack_name, path, file_type, content, hash)
+        dolt sql -q "REPLACE INTO mesh_blueprint_files (pack_name, path, file_type, content, hash)
           VALUES ('$PACK_NAME', '$relpath', '$FILE_TYPE', '$CONTENT_ESC', '$HASH');" 2>/dev/null
 
         printf "  [%-10s] %s\n" "$FILE_TYPE" "$relpath"
@@ -576,10 +576,10 @@ YAML
       SECTION="${SECTION_TYPE%%:*}"
       FTYPE="${SECTION_TYPE##*:}"
 
-      _read_pack_yaml_list "$PACK_DIR" "$SECTION" | while IFS= read -r relpath; do
+      _read_blueprint_yaml_list "$BLUEPRINT_DIR" "$SECTION" | while IFS= read -r relpath; do
         [ -z "$relpath" ] && continue
         relpath=$(echo "$relpath" | sed 's/^"//;s/"$//' | xargs)
-        FULL="$PACK_DIR/$relpath"
+        FULL="$BLUEPRINT_DIR/$relpath"
 
         if [ ! -f "$FULL" ]; then
           echo "  [warn] File not found: $relpath"
@@ -589,7 +589,7 @@ YAML
         HASH=$(sha256sum "$FULL" 2>/dev/null | cut -d' ' -f1)
         CONTENT_ESC=$(cat "$FULL" | sed "s/'/''/g")
 
-        dolt sql -q "REPLACE INTO mesh_pack_files (pack_name, path, file_type, content, hash)
+        dolt sql -q "REPLACE INTO mesh_blueprint_files (pack_name, path, file_type, content, hash)
           VALUES ('$PACK_NAME', '$relpath', '$FTYPE', '$CONTENT_ESC', '$HASH');" 2>/dev/null
 
         printf "  [%-10s] %s\n" "$FTYPE" "$relpath"
@@ -597,24 +597,24 @@ YAML
     done
 
     # Count by type
-    N_SKILLS=$(dolt sql -q "SELECT COUNT(*) FROM mesh_pack_files WHERE pack_name = '$PACK_NAME' AND file_type = 'skill';" -r csv 2>/dev/null | tail -n +2 | head -1)
-    N_ROLES=$(dolt sql -q "SELECT COUNT(*) FROM mesh_pack_files WHERE pack_name = '$PACK_NAME' AND file_type = 'role';" -r csv 2>/dev/null | tail -n +2 | head -1)
-    N_RULES=$(dolt sql -q "SELECT COUNT(*) FROM mesh_pack_files WHERE pack_name = '$PACK_NAME' AND file_type = 'rule';" -r csv 2>/dev/null | tail -n +2 | head -1)
-    N_TEMPLATES=$(dolt sql -q "SELECT COUNT(*) FROM mesh_pack_files WHERE pack_name = '$PACK_NAME' AND file_type = 'template';" -r csv 2>/dev/null | tail -n +2 | head -1)
-    N_KNOWLEDGE=$(dolt sql -q "SELECT COUNT(*) FROM mesh_pack_files WHERE pack_name = '$PACK_NAME' AND file_type = 'knowledge';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    N_SKILLS=$(dolt sql -q "SELECT COUNT(*) FROM mesh_blueprint_files WHERE pack_name = '$PACK_NAME' AND file_type = 'skill';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    N_ROLES=$(dolt sql -q "SELECT COUNT(*) FROM mesh_blueprint_files WHERE pack_name = '$PACK_NAME' AND file_type = 'role';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    N_RULES=$(dolt sql -q "SELECT COUNT(*) FROM mesh_blueprint_files WHERE pack_name = '$PACK_NAME' AND file_type = 'rule';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    N_TEMPLATES=$(dolt sql -q "SELECT COUNT(*) FROM mesh_blueprint_files WHERE pack_name = '$PACK_NAME' AND file_type = 'template';" -r csv 2>/dev/null | tail -n +2 | head -1)
+    N_KNOWLEDGE=$(dolt sql -q "SELECT COUNT(*) FROM mesh_blueprint_files WHERE pack_name = '$PACK_NAME' AND file_type = 'knowledge';" -r csv 2>/dev/null | tail -n +2 | head -1)
 
     TOTAL=$((${N_SKILLS:-0} + ${N_ROLES:-0} + ${N_RULES:-0} + ${N_TEMPLATES:-0} + ${N_KNOWLEDGE:-0}))
 
     # Compute pack hash
-    PACK_HASH=$(dolt sql -q "SELECT GROUP_CONCAT(hash ORDER BY path) FROM mesh_pack_files WHERE pack_name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1 | sha256sum | cut -d' ' -f1)
+    PACK_HASH=$(dolt sql -q "SELECT GROUP_CONCAT(hash ORDER BY path) FROM mesh_blueprint_files WHERE pack_name = '$PACK_NAME';" -r csv 2>/dev/null | tail -n +2 | head -1 | sha256sum | cut -d' ' -f1)
 
     # Escape for SQL
     PACK_DESC_ESC=$(echo "$PACK_DESC" | sed "s/'/''/g")
     PACK_TAGS_ESC=$(echo "$PACK_TAGS" | sed "s/'/''/g")
 
     # Upsert pack metadata
-    dolt sql -q "REPLACE INTO mesh_packs (name, version, description, author, author_github, tags, contains_skills, contains_roles, contains_rules, contains_templates, contains_knowledge, installs, pack_hash, published_at, updated_at)
-      VALUES ('$PACK_NAME', '$PACK_VER', '$PACK_DESC_ESC', '${PACK_AUTHOR:-$GT_ID}', '$PACK_AUTHOR_GH', '$PACK_TAGS_ESC', ${N_SKILLS:-0}, ${N_ROLES:-0}, ${N_RULES:-0}, ${N_TEMPLATES:-0}, ${N_KNOWLEDGE:-0}, COALESCE((SELECT installs FROM mesh_packs WHERE name = '$PACK_NAME'), 0), '$PACK_HASH', COALESCE((SELECT published_at FROM mesh_packs WHERE name = '$PACK_NAME'), NOW()), NOW());" 2>/dev/null
+    dolt sql -q "REPLACE INTO mesh_blueprints (name, version, description, author, author_github, tags, contains_skills, contains_roles, contains_rules, contains_templates, contains_knowledge, installs, blueprint_hash, published_at, updated_at)
+      VALUES ('$PACK_NAME', '$PACK_VER', '$PACK_DESC_ESC', '${PACK_AUTHOR:-$GT_ID}', '$PACK_AUTHOR_GH', '$PACK_TAGS_ESC', ${N_SKILLS:-0}, ${N_ROLES:-0}, ${N_RULES:-0}, ${N_TEMPLATES:-0}, ${N_KNOWLEDGE:-0}, COALESCE((SELECT installs FROM mesh_blueprints WHERE name = '$PACK_NAME'), 0), '$PACK_HASH', COALESCE((SELECT published_at FROM mesh_blueprints WHERE name = '$PACK_NAME'), NOW()), NOW());" 2>/dev/null
 
     dolt add . 2>/dev/null || true
     dolt commit -m "mesh: $GT_ID published pack $PACK_NAME v$PACK_VER ($TOTAL files)" --allow-empty 2>/dev/null || true
@@ -642,11 +642,11 @@ YAML
     echo "  install <pack-name>     Install a pack (skills, roles, etc.)"
     echo "  uninstall <pack-name>   Remove an installed pack"
     echo "  installed               List locally installed packs"
-    echo "  create <name>           Scaffold a new pack directory"
+    echo "  create <name>           Scaffold a new blueprint directory"
     echo "  publish <dir>           Publish a pack to the registry"
     echo ""
-    echo "A pack bundles skills, roles, rules, templates, and knowledge"
-    echo "into a single installable unit shared across the mesh."
+    echo "A blueprint bundles skills, roles, rules, templates, and knowledge"
+    echo "into a single installable blueprint unit shared across the mesh."
     echo ""
     ;;
 esac

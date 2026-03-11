@@ -72,7 +72,7 @@ _ensure_tables() {
     source_improvement_id VARCHAR(64),
     contributed_by VARCHAR(64),
     confirmed_count INT DEFAULT 1,
-    pack_name VARCHAR(128),
+    blueprint_name VARCHAR(128),
     created_at DATETIME,
     updated_at DATETIME
   );" 2>/dev/null || true

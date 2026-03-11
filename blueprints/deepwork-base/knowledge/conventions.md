@@ -4,10 +4,10 @@
 
 | File | Purpose |
 |------|---------|
-| `mesh.yaml` / `gtconfig.yaml` | Node identity, mesh connection, installed packs |
-| `pack.yaml` | Pack manifest (in each pack directory) |
+| `mesh.yaml` / `gtconfig.yaml` | Node identity, mesh connection, installed blueprints |
+| `blueprint.yaml` | Blueprint manifest (in each blueprint directory) |
 | `.mesh-config/` | Local cache of mesh config pulled from DoltHub |
-| `.mesh-packs/` | Locally installed packs |
+| `.mesh-blueprints/` | Locally installed blueprints |
 | `.mesh-telemetry.jsonl` | Command telemetry (timing, exit codes, errors) |
 | `.mesh-inbox-pending.log` | Unread mail log for session pickup |
 | `.mesh-config/knowledge/mesh-learnings.md` | Auto-accumulated knowledge from improve loop |
@@ -15,7 +15,7 @@
 ## Naming
 
 - GT instance IDs: lowercase, hyphenated (gt-local, gt-docker, gt-alex)
-- Pack names: lowercase, hyphenated (deepwork-base, frontend-skills)
+- Blueprint names: lowercase, hyphenated (deepwork-base, frontend-skills)
 - Skill names: lowercase, hyphenated (gt-mesh-setup, excalidraw-diagram-generator)
 - Role names: lowercase single word (planner, worker, reviewer)
 - Improvement IDs: `imp-<timestamp>-<random>`
@@ -30,8 +30,8 @@
 | mesh_rules | Governance rules |
 | mesh_config | Config distribution manifest |
 | mesh_config_files | Config file contents |
-| mesh_packs | Pack registry (marketplace) |
-| mesh_pack_files | Pack file contents |
+| mesh_blueprints | Blueprint registry (marketplace) |
+| mesh_blueprint_files | Blueprint file contents |
 | mesh_improvements | Self-improving loop — reported findings |
 | mesh_knowledge_entries | Graduated knowledge from improvements |
 | shared_beads | Cross-GT work items |
@@ -42,7 +42,7 @@
 
 ## Versioning
 
-- Packs use semver: MAJOR.MINOR.PATCH
+- Blueprints use semver: MAJOR.MINOR.PATCH
 - Config version: integer, incremented on each publish
 - gtconfig.yaml: config_version field for forward compatibility
 - Releases tagged on main after dev->main PR merge
@@ -56,7 +56,7 @@
 | `gt mesh status` / `dash` | View mesh state |
 | `gt mesh send` / `inbox` | Mesh mail |
 | `gt mesh sync` | Force DoltHub sync |
-| `gt mesh packs list/install/publish` | Pack marketplace |
+| `gt mesh blueprints list/install/publish` | Blueprint marketplace |
 | `gt mesh improve report/graduate` | Self-improving loop |
 | `gt mesh auto-sync broadcast/log/digest` | Broadcast context |
 | `gt mesh beads` / `skills` / `rules` | Shared resources |
@@ -72,7 +72,7 @@ Incoming mesh mail is dynamically routed by keyword matching:
 | planogram, vap, ai-planogram | vap-crew-manager |
 | alc, vaa, alc-ai | vaa-crew-manager |
 | arcade, gta, gt_arcade | gta-crew-manager |
-| mesh, config, pack, sync, invite | hq-mayor |
+| mesh, config, blueprint, sync, invite | hq-mayor |
 | task, bead, issue, pr, review | hq-mayor |
 | (no match) | first alive agent |
 

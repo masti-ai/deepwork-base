@@ -1,22 +1,22 @@
-# pack.yaml — Mesh Pack Specification v1
+# blueprint.yaml — Mesh Blueprint Specification v1
 #
-# A pack is a shareable bundle of mesh knowledge.
-# Packs are published to the DoltHub registry and installable by any mesh node.
+# A blueprint is a shareable bundle of mesh knowledge.
+# Blueprints are published to the DoltHub registry and installable by any mesh node.
 #
-# Pack types:
+# Blueprint types:
 #   - Skills:     Claude Code SKILL.md files (installed to ~/.claude/skills/)
 #   - Roles:      Behavioral role definitions (planner, worker, reviewer, custom)
 #   - Rules:      Governance rule sets (branch naming, PR requirements, etc.)
 #   - Templates:  PR bodies, config templates, workflow templates
 #   - Knowledge:  Docs, patterns, conventions, shared memory, tips
 #
-# A single pack can bundle any combination of these.
+# A single blueprint can bundle any combination of these.
 # Think of it as npm packages, but for AI agent knowledge.
 
 # --- REQUIRED FIELDS ---
-name: "my-pack"                        # Unique pack name (lowercase, hyphens ok)
+name: "my-blueprint"                   # Unique blueprint name (lowercase, hyphens ok)
 version: "1.0.0"                       # Semver
-description: "What this pack provides" # One-line description
+description: "What this blueprint provides" # One-line description
 
 # --- AUTHOR ---
 author: "gt-local"                     # GT ID of publisher
@@ -24,8 +24,8 @@ author_github: "freebird-ai"           # GitHub username for attribution
 tags: "backend, devops, rules"         # Comma-separated search tags
 
 # --- CONTENTS ---
-# List files under each section. Paths are relative to the pack directory.
-# Empty sections are ok — a pack can contain just skills, or just knowledge.
+# List files under each section. Paths are relative to the blueprint directory.
+# Empty sections are ok — a blueprint can contain just skills, or just knowledge.
 
 skills:
   # Each skill is a directory with a SKILL.md file
@@ -60,7 +60,7 @@ knowledge:
 
 # --- OPTIONAL ---
 
-# Dependencies on other packs (installed first)
+# Dependencies on other blueprints (installed first)
 # depends:
 #   - "deepwork-base>=1.0.0"
 

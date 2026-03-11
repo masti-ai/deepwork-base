@@ -44,7 +44,7 @@ ROUTE_TABLE=(
   "alc|vaa-|alc-ai|villa_alc|vaa:vaa-crew-manager"
   "arcade|gta-|gt_arcade|gta:gta-crew-manager"
   # Mesh/coordination always to mayor
-  "mesh|config|pack|improve|sync|invite|peer|gtconfig:hq-mayor"
+  "mesh|config|blueprint|improve|sync|invite|peer|gtconfig:hq-mayor"
   # Generic work/task/bead routing — try mayor
   "task|bead|issue|pr|review|deploy|release:hq-mayor"
 )

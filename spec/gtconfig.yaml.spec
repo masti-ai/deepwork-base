@@ -2,10 +2,10 @@
 #
 # Every GT mesh node has a gtconfig.yaml (replaces mesh.yaml).
 # This is the single source of truth for a node's identity, behavior,
-# connections, and installed packs.
+# connections, and installed blueprints.
 #
 # The file is created on `gt mesh init` or `gt mesh join` and updated
-# by `gt mesh packs install` and `gt mesh config pull`.
+# by `gt mesh blueprints install` and `gt mesh config pull`.
 
 # Schema version (for forward compatibility)
 config_version: 1
@@ -71,9 +71,9 @@ rules:
   no_force_push: true
   no_secrets_in_commits: true
 
-# --- INSTALLED PACKS ---
-# Packs installed from the mesh registry
-packs:
+# --- INSTALLED BLUEPRINTS ---
+# Blueprints installed from the mesh registry
+blueprints:
   # - name: "deepwork-base"
   #   version: "1.0.0"
   #   installed_at: "2026-03-06T15:00:00Z"
@@ -86,7 +86,7 @@ notifications:
   new_peer: true                       # Alert when someone joins the mesh
   new_contribution: true               # Alert when contributor creates bead
   peer_offline: true                   # Alert when peer offline >10min
-  pack_updates: true                   # Alert when installed pack has update
+  blueprint_updates: true               # Alert when installed blueprint has update
   config_updates: true                 # Alert when mesh config changes
 
 # --- DAEMON ---

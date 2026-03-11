@@ -144,7 +144,7 @@ This skill is implemented as shell functions sourced in `.bashrc`:
 
 ```bash
 # Add to ~/.bashrc
-source /workspace/gt/gt-mesh/packs/deepwork-base/skills/context-preserver/context-preserver.sh
+source /workspace/gt/gt-mesh/blueprints/deepwork-base/skills/context-preserver/context-preserver.sh
 ```
 
 ## See Also

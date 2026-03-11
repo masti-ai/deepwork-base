@@ -18,7 +18,7 @@ based on keyword matching against the message subject and body.
 | 1 | planogram, vap-, ai-planogram, villa_ai_planogram | vap-crew-manager |
 | 2 | alc, vaa-, alc-ai, villa_alc | vaa-crew-manager |
 | 3 | arcade, gta-, gt_arcade | gta-crew-manager |
-| 4 | mesh, config, pack, improve, sync, invite, peer, gtconfig | hq-mayor |
+| 4 | mesh, config, blueprint, improve, sync, invite, peer, gtconfig | hq-mayor |
 | 5 | task, bead, issue, pr, review, deploy, release | hq-mayor |
 | fallback | (no match) | first alive: mayor > vap > vaa > gta |
 
