@@ -33,6 +33,17 @@ behavioral_role:
       specialties: ["backend", "infrastructure"]
       max_concurrent: 3
 
+# --- SKILLS ---
+# Technical skills this node can provide for bead routing
+# Used by skill-based routing to match bead requirements to capable nodes
+skills:
+  - python
+  - typescript
+  - react
+  - ml
+  - infra
+  # Add more as needed: rust, go, java, aws, kubernetes, etc.
+
 # --- MESH CONNECTION ---
 # How this node connects to the mesh backbone
 dolthub:

@@ -102,6 +102,9 @@ case "$cmd" in
   skills)
     _run "$SCRIPTS_DIR/mesh-skills.sh" "$@"
     ;;
+  route)
+    _run "$SCRIPTS_DIR/mesh-route.sh" "$@"
+    ;;
   config)
     _run "$SCRIPTS_DIR/mesh-config.sh" "$@"
     ;;
@@ -135,6 +138,7 @@ case "$cmd" in
     echo "  dash          Full-screen dashboard (--refresh N for live)"
     echo "  beads         Shared beads — list, share, claim, unclaim"
     echo "  skills        Shared skills — list, publish, install"
+    echo "  route         Skill-based bead routing — find best node for bead"
     echo "  config        Mesh config — publish, pull, diff, status"
     echo "  blueprints    Blueprint registry — list, install, publish, create"
     echo "  auto-sync     Broadcast work context — log, digest, broadcast"

@@ -14,6 +14,13 @@ instance:
 behavioral_role:
   this_gt: "{{BEHAVIORAL_ROLE}}"
 
+skills:
+  - python
+  - typescript
+  - react
+  - ml
+  - infra
+
 dolthub:
   org: "{{DOLTHUB_ORG}}"
   database: "{{DOLTHUB_DB}}"
