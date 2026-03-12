@@ -1,3 +1,7 @@
+<p align="center">
+  <img src=".github/banner.png" alt="GT Mesh" width="100%" />
+</p>
+
 # GT Mesh
 
 **The collaboration protocol for Gas Town.**

@@ -1,9 +1,9 @@
-# Deepwork Base Blueprint — Foundation knowledge for Deepwork-AI mesh
+# Deepwork Base Pack — Foundation knowledge for Deepwork-AI mesh
 # Everything learned from building and using GT Mesh lives here.
-# Install: gt mesh blueprints install deepwork-base
+# Install: gt mesh packs install deepwork-base
 name: "deepwork-base"
-version: "2.1.0"
-description: "Foundation blueprint — roles, skills, bug fixes, anti-patterns, routing, governance, worker SLA"
+version: "2.3.0"
+description: "Foundation pack — roles, skills, cron definitions, bug fixes, anti-patterns, routing, governance, worker SLA, session lifecycle"
 author: "gt-local"
 author_github: "freebird-ai"
 tags: "deepwork, foundation, roles, skills, mesh, knowledge, patterns, routing"
@@ -12,7 +12,6 @@ skills:
   - skills/gt-mesh-setup/SKILL.md
   - skills/gt-mesh/SKILL.md
   - skills/gt-mesh-contributor/SKILL.md
-  - skills/context-preserver/SKILL.md
 
 roles:
   - roles/planner.yaml
@@ -26,6 +25,10 @@ templates:
   - templates/pr-body.md
   - templates/mesh.yaml.template
 
+crons:
+  - crons/worker-crons.yaml
+  - crons/coordinator-crons.yaml
+
 knowledge:
   - knowledge/shared-knowledge.md
   - knowledge/rules.md
@@ -34,3 +37,6 @@ knowledge:
   - knowledge/anti-patterns.md
   - knowledge/mail-routing.md
   - knowledge/worker-sla.md
+  - knowledge/account-cycling.md
+  - knowledge/session-handoffs.md
+  - knowledge/troubleshooting.md
